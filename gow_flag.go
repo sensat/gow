@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"strings"
+	"time"
 
 	"github.com/mitranim/gg"
 )
@@ -107,4 +108,21 @@ func (self *EchoMode) Parse(src string) error {
 
 func (self EchoMode) errInvalid() error {
 	return gg.Errf(`invalid echo mode %v; valid modes: %v`, self, EchoModes)
+}
+
+type FlagDebounce time.Duration
+
+func (self *FlagDebounce) Parse(src string) error {
+	duration, err := time.ParseDuration(src)
+	if err != nil {
+		return gg.Errf("failed to parse debounce duration: %v", err)
+	}
+
+	*self = FlagDebounce(duration)
+	return nil
+}
+
+func (self FlagDebounce) Allow(lastRestart time.Time) bool {
+	duration := time.Duration(self)
+	return duration == 0 || time.Now().Sub(lastRestart) > duration
 }

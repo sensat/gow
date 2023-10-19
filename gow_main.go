@@ -1,4 +1,5 @@
-/**
+/*
+*
 Go Watch: missing watch mode for the "go" command. Invoked exactly like the
 "go" command, but also watches Go files and reruns on changes.
 */
@@ -10,6 +11,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/mitranim/gg"
 )
@@ -36,6 +38,7 @@ type Main struct {
 	ChanSignals gg.Chan[os.Signal]
 	ChanRestart gg.Chan[struct{}]
 	ChanKill    gg.Chan[syscall.Signal]
+	lastRestart time.Time
 }
 
 func (self *Main) Init() {
@@ -49,6 +52,7 @@ func (self *Main) Init() {
 	self.WatchInit()
 	self.TermState.Init(self)
 	self.Stdio.Init(self)
+	self.lastRestart = time.Now()
 }
 
 /*
@@ -146,6 +150,7 @@ func (self *Main) CmdRun() {
 	for {
 		select {
 		case <-self.ChanRestart:
+			self.lastRestart = time.Now()
 			self.Opt.TermInter()
 			self.Cmd.Restart()
 
@@ -184,7 +189,8 @@ func (self *Main) OnFsEvent(event FsEvent) {
 func (self *Main) ShouldRestart(event FsEvent) bool {
 	return event != nil &&
 		!(self.Opt.Lazy && self.Cmd.IsRunning()) &&
-		self.Opt.AllowPath(event.Path())
+		self.Opt.AllowPath(event.Path()) &&
+		self.Opt.Debounce.Allow(self.lastRestart)
 }
 
 func (self *Main) Restart() { self.ChanRestart.SendZeroOpt() }

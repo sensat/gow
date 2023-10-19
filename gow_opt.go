@@ -28,6 +28,7 @@ type Opt struct {
 	Extensions FlagExtensions   `flag:"-e"  init:"go,mod" desc:"Extensions to watch; multi."`
 	WatchDirs  FlagWatchDirs    `flag:"-w"  init:"."      desc:"Directories to watch, relative to CWD; multi."`
 	IgnoreDirs FlagIgnoreDirs   `flag:"-i"                desc:"Ignored directories, relative to CWD; multi."`
+	Debounce   FlagDebounce     `flag:"-d"                desc:"Time between restarts"`
 }
 
 func (self *Opt) Init(src []string) {
